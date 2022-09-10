@@ -1,4 +1,4 @@
-{ stdenvNoCC, fetchurl, newScope, lib, pkgs
+{ stdenvNoCC, fetchurl, newScope, lib, pkgs, buildPackages, targetPackages
 , stdenv, overrideCC
 , xar, cpio, python3, pbzx }:
 

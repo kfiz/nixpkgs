@@ -23253,18 +23253,25 @@ with pkgs;
     inherit (darwin.apple_sdk.frameworks) CoreFoundation Security;
   };
 
-  mongodb-4_4 = callPackage ../servers/nosql/mongodb/4.4.nix {
+  mongodb-4_4 = callPackage ../servers/nosql/mongodb/v4_4.nix {
     sasl = cyrus_sasl;
     boost = boost17x.override { enableShared = false; };
     inherit (darwin) cctools;
     inherit (darwin.apple_sdk.frameworks) CoreFoundation Security;
   };
 
-  mongodb-5_0 = callPackage ../servers/nosql/mongodb/5.0.nix {
+  mongodb-5_0 = darwin.apple_sdk_11_0.callPackage ../servers/nosql/mongodb/v5_0.nix {
     sasl = cyrus_sasl;
     boost = boost17x.override { enableShared = false; };
     inherit (darwin) cctools;
-    inherit (darwin.apple_sdk.frameworks) CoreFoundation Security;
+    inherit (darwin.apple_sdk_11_0.frameworks) CoreFoundation Security;
+    stdenv = if stdenv.isDarwin then
+      darwin.apple_sdk_11_0.stdenv.override (old: {
+        hostPlatform = old.hostPlatform // { darwinMinVersion = "10.14"; };
+        buildPlatform = old.buildPlatform // { darwinMinVersion = "10.14"; };
+        targetPlatform = old.targetPlatform // { darwinMinVersion = "10.14"; };
+      }) else
+      if stdenv.cc.isClang then llvmPackages.stdenv else stdenv;
   };
 
   nginx-sso = callPackage ../servers/nginx-sso { };
