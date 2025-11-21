@@ -122,6 +122,7 @@ stdenv.mkDerivation rec {
 {
   callPackage,
   dovecot_pigeonhole,
+  dovecot_exporter,
 }:
 callPackage ./generic.nix { } {
   version = "2.4.2";
@@ -211,4 +212,5 @@ callPackage ./generic.nix { } {
   };
 
   inherit dovecot_pigeonhole;
+  inherit dovecot_pigeonhole dovecot_exporter;
 }
