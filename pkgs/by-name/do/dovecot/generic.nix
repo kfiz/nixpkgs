@@ -17,20 +17,19 @@
   pam,
   libcap,
   coreutils,
-  clucene-core_2,
+  clucene_core_2,
   icu75,
   libexttextcat,
+  openldap,
   libsodium,
   libstemmer,
   cyrus_sasl,
+  pcre2,
   nixosTests,
-  fetchpatch,
   rpcsvc-proto,
   libtirpc,
   withApparmor ? false,
   libapparmor,
-  withLDAP ? true,
-  openldap,
   withUnwind ? false,
   libunwind,
   # Auth modules
@@ -43,10 +42,16 @@
   withLua ? false,
   lua5_3,
 }:
-
-stdenv.mkDerivation rec {
+{
+  version,
+  hash,
+  patches ? [ ],
+  # Re-exported plugins for this version
+  dovecot_pigeonhole,
+}:
+stdenv.mkDerivation {
   pname = "dovecot";
-  version = "2.3.21.1";
+  inherit version;
 
   nativeBuildInputs = [
     flex
@@ -63,14 +68,16 @@ stdenv.mkDerivation rec {
     zlib
     zstd
     xz
-    clucene-core_2
+    clucene_core_2
     icu75
     libexttextcat
+    openldap
     libsodium
     libstemmer
     cyrus_sasl.dev
   ]
-  ++ lib.optionals (stdenv.hostPlatform.isLinux) [
+  ++ lib.optional (lib.strings.versionAtLeast version "2.4") pcre2
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
     systemd
     pam
     libcap
@@ -78,7 +85,6 @@ stdenv.mkDerivation rec {
   ]
   ++ lib.optional (stdenv.hostPlatform.isLinux && !stdenv.hostPlatform.isDarwin) libtirpc
   ++ lib.optional withApparmor libapparmor
-  ++ lib.optional withLDAP openldap
   ++ lib.optional withUnwind libunwind
   ++ lib.optional withMySQL libmysqlclient
   ++ lib.optional withPgSQL libpq
@@ -86,11 +92,17 @@ stdenv.mkDerivation rec {
   ++ lib.optional withLua lua5_3;
 
   src = fetchurl {
-    url = "https://dovecot.org/releases/${lib.versions.majorMinor version}/${pname}-${version}.tar.gz";
-    hash = "sha256-LZCheMQpdhEIi/farlSSo7w9WrYyjDoDLrQl0sJJCX4=";
+    url = "https://dovecot.org/releases/${lib.versions.majorMinor version}/dovecot-${version}.tar.gz";
+    inherit hash;
   };
 
   enableParallelBuilding = true;
+
+  postConfigure = lib.optionalString (lib.strings.versionAtLeast version "2.4") ''
+    substituteInPlace src/lib-regex/Makefile --replace-fail \
+    "test_regex_DEPENDENCIES = libdregex.la \$(LIBPCRE_LIBS)" \
+    "test_regex_DEPENDENCIES = libdregex.la"
+  '';
 
   postPatch = ''
     sed -i -E \
@@ -103,10 +115,20 @@ stdenv.mkDerivation rec {
     sed -i -s -E 's!\bcat\b!${coreutils}/bin/cat!g' src/lib-smtp/test-bin/*.sh
 
     patchShebangs src/config/settings-get.pl
-
-    # DES-encrypted passwords are not supported by NixPkgs anymore
-    sed '/test_password_scheme("CRYPT"/d' -i src/auth/test-libpassword.c
   ''
+  + (
+    let
+      filePath =
+        if lib.strings.versionAtLeast version "2.4" then
+          "src/lib-auth/test-password-scheme.c"
+        else
+          "src/auth/test-libpassword.c";
+    in
+    ''
+      # DES-encrypted passwords are not supported by Nixpkgs anymore
+      substituteInPlace ${filePath} --replace-fail 'test_password_scheme("CRYPT", "{CRYPT}//EsnG9FLTKjo", "test");' ""
+    ''
+  )
   + lib.optionalString stdenv.hostPlatform.isLinux ''
     export systemdsystemunitdir=$out/etc/systemd/system
   '';
@@ -119,32 +141,12 @@ stdenv.mkDerivation rec {
     rm -rf $out/$(echo "$out" | cut -d "/" -f2)
   '';
 
-{
-  callPackage,
-  dovecot_pigeonhole,
-}:
-callPackage ./generic.nix { } {
-  version = "2.4.2";
-  hash = "sha256-LNYuTSK5/ByAvThklzmVDw29o0+8PmJiT7aEImTpPG4=";
-  patches = [
-    # Fix loading extended modules.
-    ./load-extended-modules.patch
-    # fix openssl 3.0 compatibility
-    (fetchpatch {
-      url = "https://salsa.debian.org/debian/dovecot/-/raw/debian/1%252.3.19.1+dfsg1-2/debian/patches/Support-openssl-3.0.patch";
-      hash = "sha256-PbBB1jIY3jIC8Js1NY93zkV0gISGUq7Nc67Ul5tN7sw=";
-    })
-    # Fix build with gcc15
-    (fetchpatch {
-      name = "dovecot-test-data-stack-drop-bogus-assertion.patch";
-      url = "https://github.com/dovecot/core/commit/9f642dd868db6e7401f24e4fb4031b5bdca8aae7.patch";
-      hash = "sha256-dAX80dRqOba9Fkzl11ChYJ6vqcgfkaw/o+TOQKCnnns=";
-    })
-  ]
-  ++ lib.optionals stdenv.hostPlatform.isDarwin [
-    # fix timespec calls
-    ./timespec.patch
-  ];
+  patches =
+    lib.optionals stdenv.hostPlatform.isDarwin [
+      # fix timespec calls
+      ./timespec.patch
+    ]
+    ++ patches;
 
   configureFlags = [
     # It will hardcode this for /var/lib/dovecot.
@@ -153,18 +155,20 @@ callPackage ./generic.nix { } {
     # We need this so utilities default to reading /etc/dovecot/dovecot.conf file.
     "--sysconfdir=/etc"
     "--with-moduledir=${placeholder "out"}/lib/dovecot/modules"
+    "--with-ldap"
     "--with-ssl=openssl"
     "--with-zlib"
     "--with-bzlib"
     "--with-lz4"
+    "--with-ldap"
     "--with-lucene"
     "--with-icu"
     "--with-textcat"
   ]
   ++ lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
-    "i_cv_epoll_works=${lib.boolToYesNo stdenv.hostPlatform.isLinux}"
-    "i_cv_posix_fallocate_works=${lib.boolToYesNo stdenv.hostPlatform.isDarwin}"
-    "i_cv_inotify_works=${lib.boolToYesNo stdenv.hostPlatform.isLinux}"
+    "i_cv_epoll_works=${if stdenv.hostPlatform.isLinux then "yes" else "no"}"
+    "i_cv_posix_fallocate_works=${if stdenv.hostPlatform.isDarwin then "no" else "yes"}"
+    "i_cv_inotify_works=${if stdenv.hostPlatform.isLinux then "yes" else "no"}"
     "i_cv_signed_size_t=no"
     "i_cv_signed_time_t=yes"
     "i_cv_c99_vsnprintf=yes"
@@ -179,18 +183,17 @@ callPackage ./generic.nix { } {
   ]
   ++ lib.optional stdenv.hostPlatform.isLinux "--with-systemd"
   ++ lib.optional stdenv.hostPlatform.isDarwin "--enable-static"
-  ++ lib.optional withLDAP "--with-ldap"
-  ++ lib.optional withLua "--with-lua"
   ++ lib.optional withMySQL "--with-mysql"
   ++ lib.optional withPgSQL "--with-pgsql"
-  ++ lib.optional withSQLite "--with-sqlite";
+  ++ lib.optional withSQLite "--with-sqlite"
+  ++ lib.optional withLua "--with-lua";
 
   doCheck = !stdenv.hostPlatform.isDarwin;
 
-  meta = {
+  meta = with lib; {
     homepage = "https://dovecot.org/";
     description = "Open source IMAP and POP3 email server written with security primarily in mind";
-    license = with lib.licenses; [
+    license = with licenses; [
       mit
       publicDomain
       lgpl21Only
@@ -198,17 +201,21 @@ callPackage ./generic.nix { } {
       bsdOriginal
     ];
     mainProgram = "dovecot";
-    maintainers = with lib.maintainers; [
-      das_j
-      fpletz
-      helsinki-Jo
-    ];
-    platforms = lib.platforms.unix;
+    maintainers =
+      with maintainers;
+      [
+        fpletz
+        globin
+      ]
+      ++ lib.teams.helsinki-systems.members;
+    platforms = platforms.unix;
   };
-  passthru.tests = {
-    opensmtpd-interaction = nixosTests.opensmtpd;
-    inherit (nixosTests) dovecot;
-  };
+  passthru = {
+    tests = {
+      opensmtpd-interaction = nixosTests.opensmtpd;
+      inherit (nixosTests) dovecot;
+    };
 
-  inherit dovecot_pigeonhole;
+    pigeonhole = dovecot_pigeonhole;
+  };
 }
