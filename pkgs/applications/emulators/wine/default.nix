@@ -44,7 +44,6 @@
   x11Support ? false,
   ffmpegSupport ? false,
   embedInstallers ? false, # The Mono and Gecko MSI installers
-  moltenvk, # Allow users to override MoltenVK easily
 }:
 
 let
@@ -88,7 +87,6 @@ let
             xineramaSupport
             ;
         };
-        inherit moltenvk;
       }
     );
 

@@ -1,6 +1,7 @@
 {
   lib,
   stdenv,
+  darwin,
   fetchurl,
   m4,
   perl,
@@ -12,7 +13,7 @@
 # cgit) that are needed here should be included directly in Nixpkgs as
 # files.
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (rec {
   pname = "bison";
   version = "3.8.2"; # Check the note above doInstallCheck before updating.
 
@@ -71,4 +72,8 @@ stdenv.mkDerivation rec {
 
     platforms = lib.platforms.unix;
   };
-}
+} // lib.optionalAttrs (lib.getVersion stdenv.cc.libcxx == "20.1.0+apple-sdk-26.0") {
+  # Disable because it causes the following test failure on libc++ 20 and newer.
+  # 764: Leaked lookahead after nondeterministic parse syntax error: glr2.cc FAILED (glr-regression.at:1862)
+  hardeningDisable = [ "libcxxhardeningfast" ];
+})

@@ -1,0 +1,34 @@
+From a06397513d81ae63ffd957033f999635299ced16 Mon Sep 17 00:00:00 2001
+From: Randy Eckenrode <randy@largeandhighquality.com>
+Date: Sun, 4 Jan 2026 14:42:42 -0500
+Subject: [PATCH] separate-lib
+
+Patch paths to look for the stdlib separately from the compiler. This is
+necessary to support building the stdlib separately from the compiler.
+It also fixes the output of `swift -frontend -print-target-info`, which
+SwiftPM uses to set the rpath on Linux.
+---
+ lib/Frontend/CompilerInvocation.cpp | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/lib/Frontend/CompilerInvocation.cpp b/lib/Frontend/CompilerInvocation.cpp
+index ed413f2be91..dad33592c4d 100644
+--- a/lib/Frontend/CompilerInvocation.cpp
++++ b/lib/Frontend/CompilerInvocation.cpp
+@@ -70,11 +70,8 @@ getVersionTuple(const llvm::Triple &triple) {
+ void CompilerInvocation::computeRuntimeResourcePathFromExecutablePath(
+     StringRef mainExecutablePath, bool shared,
+     llvm::SmallVectorImpl<char> &runtimeResourcePath) {
+-  runtimeResourcePath.append(mainExecutablePath.begin(),
+-                             mainExecutablePath.end());
+-
+-  llvm::sys::path::remove_filename(runtimeResourcePath); // Remove /swift
+-  llvm::sys::path::remove_filename(runtimeResourcePath); // Remove /bin
++  auto libPath = StringRef("@lib@");
++  runtimeResourcePath.append(libPath.begin(), libPath.end());
+   appendSwiftLibDir(runtimeResourcePath, shared);
+ }
+ 
+-- 
+2.51.2
+

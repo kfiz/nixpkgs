@@ -6,7 +6,6 @@
   pkgsCross,
   callPackage,
   replaceVars,
-  moltenvk,
   wineRelease ? "stable",
   supportFlags,
 }:
@@ -23,7 +22,6 @@ with src;
       version
       supportFlags
       patches
-      moltenvk
       wineRelease
       ;
     pkgArches = [ pkgsi686Linux ];
@@ -42,7 +40,6 @@ with src;
       version
       supportFlags
       patches
-      moltenvk
       wineRelease
       ;
     pkgArches = [ pkgs ];
@@ -63,7 +60,6 @@ with src;
       version
       supportFlags
       patches
-      moltenvk
       wineRelease
       ;
     stdenv = stdenv_32bit;
@@ -96,7 +92,6 @@ with src;
       src
       version
       patches
-      moltenvk
       wineRelease
       ;
     supportFlags = supportFlags // {
