@@ -17,7 +17,7 @@
   pam,
   libcap,
   coreutils,
-  clucene_core_2,
+  clucene-core_2,
   icu75,
   libexttextcat,
   openldap,
@@ -69,7 +69,7 @@ stdenv.mkDerivation {
     zlib
     zstd
     xz
-    clucene_core_2
+    clucene-core_2
     icu75
     libexttextcat
     openldap
@@ -202,13 +202,10 @@ stdenv.mkDerivation {
       bsdOriginal
     ];
     mainProgram = "dovecot";
-    maintainers =
-      with maintainers;
-      [
-        fpletz
-        globin
-      ]
-      ++ lib.teams.helsinki-systems.members;
+    maintainers = with lib.maintainers; [
+      fpletz
+    ];
+    teams = [ lib.teams.helsinki-systems ];
     platforms = platforms.unix;
   };
   passthru = {
