@@ -3,9 +3,10 @@
   buildNpmPackage,
   fetchFromGitHub,
   jq,
+  nodejs_22,
 }:
 
-buildNpmPackage (finalAttrs: {
+buildNpmPackage.override { nodejs = nodejs_22; } (finalAttrs: {
   pname = "homebridge";
   version = "1.11.1";
 
