@@ -483,6 +483,13 @@ let
               # Those are annoyingly flaky, but not enough to be marked as such upstream.
               "test-tick-processor-arguments"
               "test-set-raw-mode-reset-signal"
+
+              # These tests fail on aarch64-darwin
+              "test-inspector-socket"
+            ]
+            ++ lib.optionals (stdenv.buildPlatform.isDarwin && stdenv.buildPlatform.isAarch64) [
+              # These tests fail on aarch64-darwin
+              "test-inspector-socket"
             ]
             # Those are annoyingly flaky, but not enough to be marked as such upstream.
             ++ lib.optional (majorVersion == "22") "test-child-process-stdout-flush-exit"
