@@ -81,7 +81,7 @@ stdenv.mkDerivation (finalAttrs: {
     libstemmer
     cyrus_sasl.dev
   ]
-  ++ lib.optionals (lib.versionAtLeast version "2.4") [
+  ++ lib.optionals (stdenv.hostPlatform.isLinux && lib.versionAtLeast version "2.4") [
     # fts_flatcurve built-in
     xapian
   ]
