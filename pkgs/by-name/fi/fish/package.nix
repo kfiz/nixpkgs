@@ -105,11 +105,10 @@ let
 
     test -n "$NIX_PROFILES"
     and begin
-      # We ensure that __extra_* variables are read in $__fish_datadir/config.fish
-      # with a preference for user-configured data by making sure the package-specific
-      # data comes last. Files are loaded/sourced in encounter order, duplicate
-      # basenames get skipped, so we assure this by prepending Nix profile paths
-      # (ordered in reverse of the $NIX_PROFILE variable)
+      # We ensure that __extra_* variables are read in embedded:config.fish with a preference for
+      # user-configured data by making sure the package-specific data comes last. Files are
+      # loaded/sourced in encounter order, duplicate basenames get skipped, so we assure this by
+      # prepending Nix profile paths (ordered in reverse of the $NIX_PROFILE variable)
       #
       # Note that at this point in evaluation, there is nothing whatsoever on the
       # fish_function_path. That means we don't have most fish builtins, e.g., `eval`.
@@ -135,12 +134,12 @@ let
   # `begin; begin; …; end; end` but that's ok.
   sourceWithFenv = path: ''
     begin # fenv
-      # This happens before $__fish_datadir/config.fish sets fish_function_path, so it is currently
-      # unset. We set it and then completely erase it, leaving its configuration to $__fish_datadir/config.fish
-      set fish_function_path ${fishPlugins.foreign-env}/share/fish/vendor_functions.d $__fish_datadir/functions
+      # This happens before embedded:config.fish sets fish_function_path, so it is currently unset.
+      # We set it and then completely erase it, leaving its configuration to embedded:config.fish
+      set fish_function_path ${fishPlugins.foreign-env}/share/fish/vendor_functions.d
       fenv source ${lib.escapeShellArg path}
       set -l fenv_status $status
-      # clear fish_function_path so that it will be correctly set when we return to $__fish_datadir/config.fish
+      # clear fish_function_path so that it will be correctly set when we return to embedded:config.fish
       set -e fish_function_path
       test $fenv_status -eq 0
     end # fenv
@@ -149,13 +148,13 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "fish";
-  version = "4.6.0";
+  version = "4.7.0";
 
   src = fetchFromGitHub {
     owner = "fish-shell";
     repo = "fish-shell";
     tag = finalAttrs.version;
-    hash = "sha256-lhixotjhD8+xb8Hw6Mu1uJPtCq0zlQsBAXpHRzT+moI=";
+    hash = "sha256-LzpWSxhUMcJytxUoD7SZyLc/+hiL6CAyL/0FNbvBk1M=";
   };
 
   env = {
@@ -168,7 +167,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   cargoDeps = rustPlatform.fetchCargoVendor {
     inherit (finalAttrs) src patches;
-    hash = "sha256-zua2O3eGi7dXh4w0IoUGL2RxvGIW0O3WpVg/tT8942Q=";
+    hash = "sha256-WS7FWws1dIuVM9gE1PBnDZpUcRu96fWR80Az4Q+tZpI=";
   };
 
   patches = [
@@ -239,7 +238,8 @@ stdenv.mkDerivation (finalAttrs: {
     substituteInPlace share/functions/grep.fish \
       --replace-fail "command grep" "command ${lib.getExe gnugrep}"
 
-    substituteInPlace share/completions/{sudo.fish,doas.fish} \
+    substituteInPlace share/completions/doas.fish \
+      share/functions/__fish_complete_sudo.fish \
       --replace-fail "/usr/local/sbin /sbin /usr/sbin" ""
   ''
   + lib.optionalString usePython ''

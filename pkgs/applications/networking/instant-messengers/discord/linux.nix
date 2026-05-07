@@ -49,7 +49,6 @@
   libgbm,
   nspr,
   nss,
-  openssl_1_1,
   pango,
   systemdLibs,
   libappindicator-gtk3,
@@ -151,7 +150,9 @@ let
       libxrender
       libxtst
       nspr
-      nss
+      # nss is intentionally NOT in libPath: it would leak via LD_LIBRARY_PATH
+      # to xdg-open and break Firefox children when versions diverge (#514859,
+      # PR #186603)
       libxcb
       libxkbcommon
       pango
@@ -229,17 +230,21 @@ stdenv.mkDerivation (finalAttrs: {
     nss
   ]
   # The new distro layout ships prebuilt `.node` modules:
-  # discord_dispatch is linked against openssl 1.1, discord_voice against libpulseaudio
-  ++ lib.optionals isDistro [
-    openssl_1_1
-    libpulseaudio
-  ];
+  # discord_dispatch is linked against openssl 1.1, discord_voice against libpulseaudio.
+  # Ignore the missing dependency on insecure openssl_1_1: discord_dispatch is
+  # effectively unused in practice.
+  ++ lib.optionals isDistro [ libpulseaudio ];
 
   strictDeps = true;
 
   dontUnpack = isDistro;
 
   inherit libPath;
+
+  autoPatchelfIgnoreMissingDeps = lib.optionals isDistro [
+    "libssl.so.1.1"
+    "libcrypto.so.1.1"
+  ];
 
   installPhase = ''
     runHook preInstall

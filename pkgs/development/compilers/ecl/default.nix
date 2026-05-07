@@ -24,11 +24,11 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "ecl";
-  version = "26.3.27";
+  version = "26.5.5";
 
   src = fetchurl {
     url = "https://common-lisp.net/project/ecl/static/files/release/ecl-${version}.tgz";
-    hash = "sha256-QW1XB78R0rPY0z1nkUGaeG5MxZrAzD7FBe5ZtRqfXJo=";
+    hash = "sha256-oBpbzajFtz5Z3aNJT9E+X+xdtqodrXgsPMO7V/FjNDU=";
   };
 
   nativeBuildInputs = [

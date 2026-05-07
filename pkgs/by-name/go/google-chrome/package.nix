@@ -184,11 +184,11 @@ let
 
   linux = stdenvNoCC.mkDerivation (finalAttrs: {
     inherit pname meta passthru;
-    version = "147.0.7727.116";
+    version = "148.0.7778.96";
 
     src = fetchurl {
       url = "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${finalAttrs.version}-1_amd64.deb";
-      hash = "sha256-f4lIdknIXTTv3yxvs754n6/a01h5xxWWOvnjwQcIPnw=";
+      hash = "sha256-Rmowgy0t/GJkiu28ZkXdzi5dzFxpFpzhcbZgsdFKl0c=";
     };
 
     # With strictDeps on, some shebangs were not being patched correctly
@@ -302,11 +302,11 @@ let
 
   darwin = stdenvNoCC.mkDerivation (finalAttrs: {
     inherit pname meta passthru;
-    version = "147.0.7727.117";
+    version = "148.0.7778.97";
 
     src = fetchurl {
-      url = "http://dl.google.com/release2/chrome/hlfggraqploqe3bea7acbi5wei_147.0.7727.117/GoogleChrome-147.0.7727.117.dmg";
-      hash = "sha256-GCdZAiqNSDcC6qgsJGS5renRrl3kLoH4X9VHX7aLXTw=";
+      url = "http://dl.google.com/release2/chrome/fqffxmazeqztj7lx2lxedj2iwy_148.0.7778.97/GoogleChrome-148.0.7778.97.dmg";
+      hash = "sha256-lfmEmoovaTcgyvetQnXnlE9dOLI7FRvPu6f6Fcpc7JA=";
     };
 
     dontPatch = true;

@@ -141,13 +141,13 @@ let
 in
 goBuild (finalAttrs: {
   pname = "ollama";
-  version = "0.21.1";
+  version = "0.23.1";
 
   src = fetchFromGitHub {
     owner = "ollama";
     repo = "ollama";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-t/c2oba/y1IUh460+P3MQHGLnExrKcOcQpiMg0mFLBs=";
+    hash = "sha256-19rx+PNCpvRxhVr1+bgqsQIwpZzgdazlCoppxlDKzvE=";
   };
 
   vendorHash = "sha256-Lc1Ktdqtv2VhJQssk8K1UOimeEjVNvDWePE9WkamCos=";
@@ -194,7 +194,10 @@ goBuild (finalAttrs: {
       --replace-fail 0.0.0 '${finalAttrs.version}'
     substituteInPlace cmd/launch/openclaw_test.go \
       --replace-fail '/bin/mkdir' '${coreutils}/bin/mkdir' \
-      --replace-fail '/bin/cat' '${coreutils}/bin/cat'
+      --replace-fail '/bin/cat' '${coreutils}/bin/cat' \
+      --replace-fail '/usr/bin/env' '${coreutils}/bin/env' \
+      --replace-fail '/usr/bin/sort' '${coreutils}/bin/sort' \
+      --replace-fail '/bin/chmod' '${coreutils}/bin/chmod'
     substituteInPlace cmd/launch/hermes_test.go \
       --replace-fail '/bin/mkdir' '${coreutils}/bin/mkdir' \
       --replace-fail '/bin/cat' '${coreutils}/bin/cat' \
